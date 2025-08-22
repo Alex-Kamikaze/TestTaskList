@@ -1,6 +1,11 @@
-from pydantic_settings import BaseSettings
 from logging import DEBUG, INFO
 from typing import Literal
+from pydantic_settings import BaseSettings
+from environs import Env
+
+env = Env()
+
+env.read_env()
 
 
 class DevSettings(BaseSettings):
@@ -11,7 +16,7 @@ class DevSettings(BaseSettings):
 
 
 class ProductionSettings(BaseSettings):
-    DATABASE_URI: str = "mysql+pymysql://root:shedF34A@localhost:3306/taskdb"
+    DATABASE_URI: str = env.str("DATABASE_URL")
     LOGGING_LEVEL: Literal[20] = INFO
     HOST: str = "0.0.0.0"
     PORT: int = 8000

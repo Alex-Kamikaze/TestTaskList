@@ -1,8 +1,8 @@
+from pathlib import Path
 import logging
-import os
 import signal
 from contextlib import asynccontextmanager
-from dotenv import load_dotenv
+from environs import Env
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -13,9 +13,14 @@ from core.config import dev_settings, prod_settings
 from db.session.db_session import engine
 from db.entities.models import Base
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent
+env = Env()
 
-debug = bool(os.environ.get("DEBUG"))
+env.read_env(BASE_DIR / ".env")
+
+debug = env.bool("DEBUG")
+print(debug)
+
 if debug:
     settings = dev_settings
 else:
@@ -29,13 +34,10 @@ server = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Setting up debug database...")
-
+    
     if debug:
         Base.metadata.drop_all(bind=engine)
         Base.metadata.create_all(bind=engine)
-
-    logger.info("Finishing setup for debug database...")
 
     yield
 
