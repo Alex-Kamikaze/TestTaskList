@@ -4,7 +4,7 @@ from sqlalchemy.exc import OperationalError, NoResultFound
 from services.base_service import Service
 from schemas.models import TaskCreationModel, TaskModel, TaskModificationModel
 from db.entities.models import Task, Status
-from exceptions.task_exceptions import TaskCreationException, TaskNotFoundException
+from exceptions.task_exceptions import TaskCreationException, TaskNotFoundException, IncorrectUUIDPassed
 from exceptions.status_exceptions import StatusNotFoundException
 
 
@@ -77,8 +77,16 @@ class TaskModificationService(Service):
 
     def __update_task(self, task_modification_model: TaskModificationModel):
         task = None
+        task_id = None
+
         try:
-            task = self.session.get_one(Task, UUID(task_modification_model.id))
+            task_id = UUID(task_modification_model.id)
+        except ValueError:
+            raise IncorrectUUIDPassed()
+
+
+        try:
+            task = self.session.get_one(Task, task_id)
         except NoResultFound:
             raise TaskNotFoundException()
 

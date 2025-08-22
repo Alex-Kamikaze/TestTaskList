@@ -10,7 +10,7 @@ from services.tasks_services import (
     TaskModificationService,
     TaskDeleteService,
 )
-from exceptions.task_exceptions import TaskCreationException, TaskNotFoundException
+from exceptions.task_exceptions import TaskCreationException, TaskNotFoundException, IncorrectUUIDPassed
 from exceptions.status_exceptions import StatusNotFoundException
 
 router = APIRouter()
@@ -62,12 +62,9 @@ async def update_task(
     service = TaskModificationService(session)
 
     try:
-        task_modification_model.id = uuid.UUID(task_modification_model.id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Неправильный формат id задачи")
-
-    try:
         service(task_modification_model)
+    except IncorrectUUIDPassed:
+        raise HTTPException(status_code=400, detail="Указан неправильный UUID задачи")
     except TaskNotFoundException:
         raise HTTPException(status_code=404, detail="Указанной задачи не найдено!")
     except StatusNotFoundException:

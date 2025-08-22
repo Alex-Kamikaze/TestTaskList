@@ -1,13 +1,16 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from fastapi.testclient import TestClient
+from main import app
 from services.tasks_services import TaskCreationService, TaskSearchService, TaskModificationService, TaskDeleteService
 from services.status_services import CreateStatusService, SearchStatusService, UpdateStatusService, DeleteStatusService
+from api.deps.db_dependency import get_db
 from db.entities.models import Base
 
 @pytest.fixture(scope="session")
 def engine():
-    return create_engine("sqlite:///:memory:", echo=False)
+    return create_engine("sqlite:///:memory:?check_same_thread=False", echo=False)
 
 @pytest.fixture(scope="session")
 def create_tables(engine):
@@ -57,3 +60,16 @@ def update_status_service(mock_session):
 @pytest.fixture
 def delete_status_service(mock_session):
     return DeleteStatusService(mock_session)
+
+@pytest.fixture(scope="function")
+def api_client(mock_session):
+
+    def override_get_db():
+        try:
+            yield mock_session
+        finally:
+            mock_session.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as test_client:
+        yield test_client
