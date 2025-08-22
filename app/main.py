@@ -1,5 +1,6 @@
 import logging
 import os
+import signal
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 import uvicorn
@@ -23,6 +24,8 @@ else:
 logging.basicConfig(level=settings.LOGGING_LEVEL)
 logger = logging.getLogger(__name__)
 
+server = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -33,8 +36,12 @@ async def lifespan(app: FastAPI):
         Base.metadata.create_all(bind=engine)
 
     logger.info("Finishing setup for debug database...")
-    engine.dispose()
+
     yield
+
+    logger.info("Shutting down application...")
+    engine.dispose()
+    logger.info("Database connections closed.")
 
 
 app = FastAPI(title="TestTask", version="1.0", lifespan=lifespan)
@@ -44,9 +51,8 @@ app = FastAPI(title="TestTask", version="1.0", lifespan=lifespan)
 async def database_error_handler(request: Request, exc: SQLAlchemyError):
     logger.error(f"Database Error: {str(exc)}")
 
-    return JSONResponse(
-        status_code=500, content={"detail": "Database connection error"}
-    )
+    return JSONResponse(status_code=500, content={"detail": "Internal Database Error"})
+
 
 @app.get("/health")
 async def healthcheck():
@@ -56,10 +62,24 @@ async def healthcheck():
 app.include_router(tasks_router, prefix="/tasks")
 app.include_router(status_router, prefix="/status")
 
+
+def signal_handler(sig, frame):
+    logger.info("Received interrupt signal. Shutting down...")
+    if server:
+        server.should_exit = True
+
+
 if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        port=settings.PORT,
-        host=settings.HOST,
-        reload=debug
+    signal.signal(signal.SIGINT, signal_handler)
+
+    config = uvicorn.Config(
+        "main:app", port=settings.PORT, host=settings.HOST, reload=debug
     )
+    server = uvicorn.Server(config)
+
+    try:
+        server.run()
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user")
+    finally:
+        logger.info("Server shutdown complete")

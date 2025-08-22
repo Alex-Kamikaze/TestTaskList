@@ -1,3 +1,4 @@
+from uuid import UUID
 from typing import List
 from sqlalchemy.exc import OperationalError, NoResultFound
 from services.base_service import Service
@@ -33,7 +34,6 @@ class TaskCreationService(Service):
 
 class TaskSearchService(Service):
     def find_task_by_id(self, task_id: str) -> TaskModel:
-        # TODO: Починить поиск статуса по id
         try:
             task = self.session.get_one(Task, ident=task_id)
             status = (
@@ -78,7 +78,7 @@ class TaskModificationService(Service):
     def __update_task(self, task_modification_model: TaskModificationModel):
         task = None
         try:
-            task = self.session.get_one(Task, task_modification_model.id)
+            task = self.session.get_one(Task, UUID(task_modification_model.id))
         except NoResultFound:
             raise TaskNotFoundException()
 
