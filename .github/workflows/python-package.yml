@@ -6,6 +6,7 @@ on:
 
 env:
   DATABASE_URL: "sqlite:///:memory:"
+  DEBUG: "True"
 
 jobs:
   test:
