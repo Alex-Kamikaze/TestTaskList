@@ -1,6 +1,6 @@
 import uuid
 import factory
-from schemas.models import TaskCreationModel, StatusModel, TaskModificationModel
+from schemas.models import TaskCreationModel, StatusModel, TaskModificationModel, StatusModification
 from db.entities.models import Status, Task
 
 class StatusCreationFactory(factory.Factory):
@@ -51,3 +51,10 @@ class TaskUpdateModelFactory(factory.Factory):
     name = "update"
     text = "update"
     status = 1
+
+class UpdateStatusModelFactory(factory.Factory):
+    class Meta:
+        model = StatusModification
+
+    id = 1
+    name = "update"

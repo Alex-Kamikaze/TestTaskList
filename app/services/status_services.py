@@ -54,7 +54,7 @@ class UpdateStatusService(Service):
 
 
 class DeleteStatusService(Service):
-    def __call__(self, status_id):
+    def __call__(self, status_id: int):
         self.__delete_status(status_id)
 
     def __delete_status(self, status_id: int):
